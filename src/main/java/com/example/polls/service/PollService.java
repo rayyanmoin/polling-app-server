@@ -1,5 +1,6 @@
 package com.example.polls.service;
 
+import com.example.polls.DTO.PollsDTO;
 import com.example.polls.exception.BadRequestException;
 import com.example.polls.exception.ResourceNotFoundException;
 import com.example.polls.model.*;
@@ -21,10 +22,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -271,5 +276,24 @@ public class PollService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
         return creatorMap;
+    }
+    public ResponseEntity<List<PollsDTO>> getPollsData() {
+        try {
+            List<Object[]> pollsData = pollRepository.getPollsData();
+
+            List<PollsDTO> pollDtos = pollsData.stream()
+                    .map(row -> {
+                        PollsDTO pollDto = new PollsDTO();
+                        pollDto.setId(((BigInteger) row[0]).longValue());  // Cast to BigInteger and then to Long
+                        pollDto.setQuestion((String) row[1]);
+                        return pollDto;
+                    })
+                    .collect(Collectors.toList());
+
+            return new ResponseEntity<>(pollDtos, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(new ArrayList<>(), HttpStatus.BAD_REQUEST);
+        }
     }
 }
